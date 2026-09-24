@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: ../CyberClub
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Data Source=/data/cyberclub.db
+      Jwt__Key: ${CYBERCLUB_JWT_KEY:?Set CYBERCLUB_JWT_KEY in .env}
+    volumes:
+      - club_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  club_data:
