@@ -16,7 +16,16 @@ export function useClientState() {
     const token = localStorage.getItem("ctrl-token");
     if (!token) return;
     try {
-      const currentClient = await api<Client>("/clients/me");
+      let currentClient: Client;
+      try {
+        currentClient = await api<Client>("/clients/me");
+      } catch (reason) {
+        if (reason instanceof ApiError && reason.status === 404 && localStorage.getItem("ctrl-token") === token) {
+          logout();
+          return;
+        }
+        throw reason;
+      }
       const [clientBookings, activeSessions] = await Promise.all([
         api<Booking[]>("/bookings"),
         api<Session[]>("/sessions/active"),
